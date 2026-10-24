@@ -172,11 +172,11 @@ export function getShareByKey (key: string, password?: string, keyType: KeyType 
 
 /**
  * Underlying fetch for getShareByKey. Always hits Immich; the public
- * getShareByKey wraps this with the cache. Don't call this directly from
- * outside the module - going through getShareByKey is what gives us the
- * coalescing on cold misses.
+ * getShareByKey wraps this with the cache for normal gallery/asset requests.
+ * The tag manifest uses this fresh lookup to avoid disclosing a removed
+ * asset's tags through the longer-lived manifest cache.
  */
-async function fetchShareByKey (key: string, password?: string, keyType: KeyType = KeyType.key): Promise<SharedLinkResult> {
+export async function fetchShareByKey (key: string, password?: string, keyType: KeyType = KeyType.key): Promise<SharedLinkResult> {
   const result = await fetchSharedLink(key, keyType, password)
   if (!result.link) return result
   const link = result.link

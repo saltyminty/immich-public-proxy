@@ -131,6 +131,7 @@ export function computeLayoutAndRender () {
   if (containerW <= 0) return
   if (containerW === state.lastContainerW) {
     virtualize()
+    loadVisibleTiles()
     return
   }
   state.lastContainerW = containerW
@@ -140,15 +141,27 @@ export function computeLayoutAndRender () {
   state.headers = result.headers
   state.container.style.height = result.totalHeight + 'px'
 
+  clearRendered()
+  virtualize()
+  loadVisibleTiles()
+}
+
+function clearRendered () {
   for (const [, el] of state.renderedTiles) el.remove()
   state.renderedTiles.clear()
   for (const [, el] of state.renderedHeaders) el.remove()
   state.renderedHeaders.clear()
   // Otherwise virtualize() would rebuild every seen tile at once
   state.stickyTiles.clear()
+}
 
-  virtualize()
-  loadVisibleTiles()
+export function resetGalleryLayout () {
+  clearRendered()
+  state.layout = []
+  state.headers = []
+  state.lastContainerW = 0
+  if (state.container) state.container.style.height = '0px'
+  computeLayoutAndRender()
 }
 
 /**

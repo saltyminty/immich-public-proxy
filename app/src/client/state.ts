@@ -55,6 +55,7 @@ export interface GroupSpec {
 type PhotoSwipeLightboxInstance = any
 
 export const state = {
+  allItems: [] as GalleryItem[],
   items: [] as GalleryItem[],
   layout: [] as LayoutEntry[],
   headers: [] as HeaderEntry[],

@@ -94,14 +94,19 @@ function downloadSelected () {
       return
     }
   }
+  downloadAssets(Array.from(state.selected))
+}
+
+export function downloadAssets (ids: string[]) {
+  if (!ids.length) return
   // Form POST so the browser handles streaming the zip directly to disk.
   const form = document.createElement('form')
   form.method = 'POST'
-  form.action = window.location.pathname + '/download'
+  form.action = window.location.pathname.replace(/\/+$/, '') + '/download'
   const input = document.createElement('input')
   input.type = 'hidden'
   input.name = 'assets'
-  input.value = JSON.stringify(Array.from(state.selected))
+  input.value = JSON.stringify(ids)
   form.appendChild(input)
   document.body.appendChild(form)
   form.submit()

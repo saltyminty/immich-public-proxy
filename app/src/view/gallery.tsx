@@ -21,6 +21,7 @@ export interface GalleryProps {
   metadataConfig: MetadataConfig
   groupByDate: GroupByDateMode | false
   metaBase?: string
+  tagsUrl?: string
   // The upload service's page for this share, when it accepts uploads
   uploadLink?: string
   // Set when the upload service is assumed rather than configured: the button
@@ -35,7 +36,8 @@ export function Gallery (props: GalleryProps) {
     lightboxConfig: props.lightboxConfig,
     metadataConfig: props.metadataConfig,
     groupByDate: props.groupByDate,
-    metaBase: props.metaBase
+    metaBase: props.metaBase,
+    tagsUrl: props.tagsUrl
   })
   const firstItem = props.items[0]
   // og:image prefers the album cover (passed via props); for videos, previewUrl
@@ -98,11 +100,14 @@ export function Gallery (props: GalleryProps) {
                 </a>
               )}
               {props.showDownloadZip && (
-                <a id="download-all" class="header-action" href={props.path + '/download'} title="Download all" aria-label="Download all">
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path fill="currentColor" d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z"/>
-                  </svg>
-                </a>
+                <>
+                  <a id="download-all" class="header-action" href={props.path + '/download'} title="Download all" aria-label="Download all">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path fill="currentColor" d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z"/>
+                    </svg>
+                  </a>
+                  <button id="download-matching" class="header-action" type="button" hidden>Download matching</button>
+                </>
               )}
             </div>
           </header>
@@ -110,9 +115,29 @@ export function Gallery (props: GalleryProps) {
         {props.description && (
           <p id="album-description">{props.description}</p>
         )}
+        {props.tagsUrl && (
+          <div id="tag-filter" class="tag-filter">
+            <div class="tag-filter-picker">
+              <button id="tag-filter-toggle" class="tag-filter-button" type="button" disabled
+                aria-expanded="false" aria-controls="tag-filter-panel">Filter by tags</button>
+              <div id="tag-filter-panel" hidden>
+                <fieldset id="tag-filter-options">
+                  <legend>Match all selected tags</legend>
+                </fieldset>
+              </div>
+            </div>
+            <button id="tag-filter-clear" class="tag-filter-button" type="button" disabled>Clear filters</button>
+            <span id="tag-filter-status" role="status" aria-live="polite">Loading tags… You can browse all items.</span>
+            <button id="tag-filter-retry" class="tag-filter-button" type="button" hidden>Retry</button>
+          </div>
+        )}
+        <p id="tag-filter-empty" hidden>No items match all selected tags.</p>
 {/* Container is intentionally empty - web.js's virtualisation manager
             populates it with only the tiles within the viewport buffer. */}
         <div id="gallery"></div>
+        <footer class="gallery-footer">
+          <a href="/share/about">About</a>
+        </footer>
         {props.showDownloadZip && (
           <div id="select-toolbar" hidden>
             <button id="select-cancel" class="toolbar-btn" type="button" aria-label="Exit selection mode">

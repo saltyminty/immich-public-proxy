@@ -77,6 +77,15 @@ export interface AssetMetadata {
   downloadFilename?: string
 }
 
+export interface TagManifest {
+  tags: Array<{ id: string, name: string }>
+  assets: Array<{ id: string, tagIds: string[] }>
+}
+
+export interface TagResponse extends TagManifest {
+  refreshState: 'ready' | 'refreshing' | 'failed'
+}
+
 export interface LightboxConfig {
   showArrows: boolean
   showDownload: boolean
@@ -110,4 +119,5 @@ export interface InitParams {
   metadataConfig?: MetadataConfig
   groupByDate?: GroupByDateMode | false
   metaBase?: string
+  tagsUrl?: string
 }

@@ -21,6 +21,11 @@ COPY --chown=node:node shared/ shared/
 COPY --chown=node:node app/ app/
 RUN npm run build --workspace=shared --workspace=app
 
+# The modified network service offers its corresponding source under AGPL-3.0.
+# The build context excludes credentials, Git internals and generated output.
+COPY --chown=node:node . /ipp/source/
+RUN tar -czf /ipp/app/public/custom-source.tar.gz -C /ipp/source .
+
 # Production tree with @ipp/core dereferenced from its workspace symlink into a
 # real folder (cp -L), so the runner's /app is self-contained. The apps'
 # workspace links go first: the runner has IPP at /app, and the upload app

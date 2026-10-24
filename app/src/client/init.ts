@@ -12,6 +12,7 @@ import { state } from './state.js'
 import { setupToolbar } from './selection.js'
 import { initLightbox, openLightbox } from './lightbox.js'
 import { computeLayoutAndRender, onScroll } from './virtualisation.js'
+import { setupTagFilter } from './tag-filter.js'
 
 function readInitParams (): InitParams {
   const el = document.getElementById('ipp-init')
@@ -43,7 +44,8 @@ function revealUploadLink () {
 function init () {
   const params = readInitParams()
   revealUploadLink()
-  state.items = params.items || []
+  state.allItems = params.items || []
+  state.items = state.allItems
   state.lightboxConfig = params.lightboxConfig || {}
   if (params.metadataConfig) state.metadataConfig = params.metadataConfig
   state.groupByDate = params.groupByDate || false
@@ -53,6 +55,8 @@ function init () {
 
   setupToolbar()
   initLightbox()
+  computeLayoutAndRender()
+  if (params.tagsUrl) setupTagFilter(params.tagsUrl)
 
   let resizeFrame: number | undefined
   const resizeObserver = new ResizeObserver(() => {

@@ -9,3 +9,8 @@
 /upload-app/dist/
 /upload-app/public/js/
 /upload-app/.env
+/.git/
+**/.env
+**/.env.*
+**/*.tsbuildinfo
+/app/public/custom-source.tar.gz

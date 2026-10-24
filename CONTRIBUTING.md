@@ -127,6 +127,54 @@ The server tsconfig excludes `src/client/`; the client tsconfig only includes `s
 
 ## Development setup
 
+### Custom tag-filter build
+
+This deployment branch starts from upstream `v4.1.1`. Its gallery adds a tag
+dropdown with AND matching, filtered lightbox navigation and matching downloads.
+The share must enable Immich's **Show metadata** option. `GET /share/tags/:key`
+returns only the tags belonging to that share's visible assets. It revalidates
+share access for each response. Compact per-asset tags stay in bounded process
+memory (20,000 assets across 20 authorization namespaces) until removal, LRU
+eviction or restart. After five minutes, a visit starts a background check while
+returning the complete cached index with `refreshState: "refreshing"`. Refreshes
+publish atomically after fresh permission and membership validation. Failures
+retain the cached index with `refreshState: "failed"` and a 60-second retry
+cooldown. There is no idle refresh timer or reliable Immich shared-link tag-change
+event. At most two asset tag requests run at once, with foreground priority.
+Successful foreground reads survive failed scans and membership changes. The endpoint
+reconciles concurrent uploads up to three times within one 90-second deadline;
+transient asset failures get one retry. Only a complete, freshly authorised
+index is returned, and the gallery remains browsable if loading fails. The client
+polls every two seconds only while refreshing, for at most two minutes. It retains
+selected tag IDs, keeps disappeared selected tags unavailable rather than
+broadening the filter, and defers index changes until an open photo viewer closes.
+
+Build with a distinct version whenever changing browser code, because static
+assets are cached under the version segment:
+
+```bash
+npm ci
+npm run build
+npm run lint
+npm test
+docker build --build-arg PACKAGE_VERSION=4.1.1-tags.3.1 -t immich-public-proxy:4.1.1-tags.3.1 .
+```
+
+The Docker build includes a source archive offered on `/share/about`, reached
+through the gallery footer's **About** link. Keep that source offer available
+when deploying the customised AGPL build.
+Keep deployment credentials, photos and backups outside this source checkout.
+The source archive is generated from the Docker build context; inspect that
+context before adding files. The `.dockerignore` excludes `.git`, environment
+files, dependency trees and generated output.
+
+After changing the IPP image in the deployment's Compose file, recreate only
+that service with `docker compose up -d --no-deps --no-build immich-public-proxy`.
+To roll back, restore the previous image reference and run the same command.
+Upstream updates must be merged and checked against the custom filtering tests.
+
+### Upstream development
+
 ```bash
 npm install             # at the repo root, for every workspace
 npm run dev             # builds @ipp/core once, then watches core, server and client

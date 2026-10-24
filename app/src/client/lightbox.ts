@@ -354,7 +354,7 @@ export function initLightbox () {
  * No-op if the lightbox hasn't been initialised yet.
  */
 export function openLightbox (index: number) {
-  if (state.lightbox) state.lightbox.loadAndOpen(index)
+  if (state.lightbox && state.items[index]) state.lightbox.loadAndOpen(index, buildDataSource())
 }
 
 /**

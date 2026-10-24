@@ -41,6 +41,8 @@ import { respondToInvalidRequest as ippInvalidRequestHandler } from './invalidRe
 import { ASSET_VERSION } from './version'
 import { h } from 'preact'
 import { Home } from './view/home'
+import { About } from './view/about'
+import { getTagManifest, tagFailureDiagnostic } from './tags'
 
 /*
   Must run before any code that calls getConfigOption. The bundled
@@ -66,10 +68,11 @@ setInvalidRequestHandler(ippInvalidRequestHandler)
 
 const app = express()
 app.use(sessionMiddleware({ name: 'session' }))
-// For parsing the password unlock form and POSTed JSON payloads
-app.use(express.json())
+// Browser forms and JSON requests are uncompressed. Reject encoded request
+// bodies to mitigate body-parser GHSA-27r3-jxmh-p828 until dependencies update.
+app.use(express.json({ inflate: false }))
 // For parsing the selective-download form POST (form-encoded body)
-app.use(express.urlencoded({ extended: false, limit: '1mb' }))
+app.use(express.urlencoded({ extended: false, limit: '1mb', inflate: false }))
 
 /** Serve IPP's own `public` folder, then core's, at `path`. */
 function serveStatic (path: string, options: Parameters<typeof express.static>[1] = {}) {
@@ -168,6 +171,32 @@ if (uploadProbe) {
     res.status(204).end()
   })
 }
+
+/*
+  [ROUTE] Compact tags for the current share only. No account API key is used.
+  Validate live permissions and complete share membership before using a
+  cached manifest, and again afterwards so changes during loading fail closed.
+*/
+app.get('/:shareType(share|s)/tags/:key', decodeCookie, asyncHandler(async (req, res) => {
+  addResponseHeaders(res)
+  addNoStoreHeaders(res)
+  try {
+    const manifest = await getTagManifest(req.params.key, req.password, getKeyTypeFromShare(req.params.shareType))
+    res.json(manifest)
+  } catch (error) {
+    // Log safe categories only: no keys, asset IDs, tag labels or upstream bodies.
+    console.warn('Tag request failed', tagFailureDiagnostic(error))
+    // Keep upstream errors, share existence, and password state private.
+    respondToInvalidRequest(res, 404, 'Tags unavailable')
+  }
+}))
+
+// Keep the source offer accessible without a download link in every gallery.
+app.get('/share/about', (_req, res) => {
+  addResponseHeaders(res)
+  addNoStoreHeaders(res)
+  res.send(renderPage(h(About, {})))
+})
 
 /*
   [ROUTE] The main URL a visitor opens from a shared link

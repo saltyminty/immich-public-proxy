@@ -1,5 +1,29 @@
 # Sharing from Immich
 
+## Filter a shared gallery by tags (custom build)
+
+When the share allows metadata, **Filter by tags** appears above the gallery.
+Wait for the tags to finish loading, then select one or more checkboxes. A photo
+must have **every selected tag** to appear. **Clear filters** restores all items.
+The photo viewer navigates through the matching items, and **Download matching**
+downloads those same items. With no tags selected, the usual whole-album download
+remains available. Saved tags remain usable while **Updating tags…** is shown;
+updates preserve your selections and wait until the photo viewer closes. A
+selected tag that disappears remains marked **no longer available** and matches
+no photos until you remove that selection.
+
+Opening or reloading an album checks its membership and loads tags for new
+photos. Once saved tags are five minutes old, a visit starts a background check
+for tag edits. This does not watch Immich continuously. If a refresh fails, saved
+tags remain usable and Retry becomes available. First visits and proxy restarts
+still need an initial load. The gallery remains available if tags cannot load.
+
+The dropdown uses explicit Immich tags, including their full hierarchical names.
+Face-recognition People labels are separate and are not included.
+
+The **About** link below the gallery opens the version and licence information,
+with a download of the source code for this custom build.
+
 Other than the initial configuration during [installation](/installation), everything is managed through Immich.
 IPP has no admin interface of its own.
 
