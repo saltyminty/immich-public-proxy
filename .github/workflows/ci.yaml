@@ -65,6 +65,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           build-args: |
             PACKAGE_VERSION=${{ env.PACKAGE_VERSION }}
+            SOURCE_REVISION=${{ github.sha }}
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
           annotations: ${{ steps.metadata.outputs.annotations }}

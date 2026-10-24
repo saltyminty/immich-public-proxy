@@ -22,7 +22,7 @@ The dropdown uses explicit Immich tags, including their full hierarchical names.
 Face-recognition People labels are separate and are not included.
 
 The **About** link below the gallery opens the version and licence information,
-with a download of the source code for this custom build.
+with a link to the exact source commit for this custom build on GitHub.
 
 Other than the initial configuration during [installation](/installation), everything is managed through Immich.
 IPP has no admin interface of its own.

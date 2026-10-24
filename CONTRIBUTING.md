@@ -150,23 +150,34 @@ selected tag IDs, keeps disappeared selected tags unavailable rather than
 broadening the filter, and defers index changes until an open photo viewer closes.
 
 Build with a distinct version whenever changing browser code, because static
-assets are cached under the version segment:
+assets are cached under the version segment. Build only from a clean checkout of
+a commit already pushed to the public `saltyminty/immich-public-proxy` fork. Commit
+the complete source changes first, then pass that commit's full SHA as a build
+argument; do not write the commit SHA back into a source file.
 
 ```bash
 npm ci
 npm run build
 npm run lint
 npm test
-docker build --build-arg PACKAGE_VERSION=4.1.1-tags.3.1 -t immich-public-proxy:4.1.1-tags.3.1 .
+test -z "$(git status --porcelain)" &&
+docker build --build-arg PACKAGE_VERSION=4.1.1-tags.4 \
+  --build-arg SOURCE_REVISION="$(git rev-parse HEAD)" \
+  -t immich-public-proxy:4.1.1-tags.4 .
 ```
 
-The Docker build includes a source archive offered on `/share/about`, reached
-through the gallery footer's **About** link. Keep that source offer available
-when deploying the customised AGPL build.
-Keep deployment credentials, photos and backups outside this source checkout.
-The source archive is generated from the Docker build context; inspect that
-context before adding files. The `.dockerignore` excludes `.git`, environment
-files, dependency trees and generated output.
+The gallery footer's **About** link leads to `/share/about`, which offers the
+corresponding source at the public fork's exact commit. Production builds require
+a valid 40-character `SOURCE_REVISION`; Docker embeds it in the environment and
+image labels and validates it during the build. Keep the referenced commit
+publicly accessible when deploying this customised AGPL build. The container no
+longer bundles a separate source archive. Local development without a revision
+links to the fork homepage without claiming it is the exact running source.
+
+This fork does not automatically publish container images; its inherited GitHub
+Actions workflows are disabled. Keep deployment credentials, photos and backups
+outside the public source checkout. The `.dockerignore` excludes `.git`,
+environment files, dependency trees and generated output.
 
 After changing the IPP image in the deployment's Compose file, recreate only
 that service with `docker compose up -d --no-deps --no-build immich-public-proxy`.
@@ -210,6 +221,10 @@ npm run build:client    # client only
 npm run test:watch      # vitest in watch mode
 npm run test:container  # build a podman image and run it locally
 ```
+
+The container command requires a clean checkout of a publicly pushed commit, as
+described in [Custom tag-filter build](#custom-tag-filter-build), and passes its
+revision to the image. Use `npm run dev` while working on uncommitted changes.
 
 `npm test` runs the pure-function unit tests in `shared/tests/`, `app/tests/` and `upload-app/tests/`, then `docs/tests/`, which checks the config reference pages against both `config.json` files. The apps' tests import `@ipp/core` from its source, so they need no build. Add tests as you touch a pure-function area, and for any new pure logic you introduce. Skip HTTP plumbing.
 

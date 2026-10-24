@@ -10,7 +10,7 @@
     "build:client": "tsc -p tsconfig.client.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:container": "podman build --build-arg PACKAGE_VERSION=$(npm pkg get version | xargs) --format docker -t immich-proxy-test .. && podman run -it -p=3000:3000 --env-file .env --restart=always immich-proxy-test",
+    "test:container": "test -z \"$(git status --porcelain)\" && podman build --build-arg PACKAGE_VERSION=$(npm pkg get version | xargs) --build-arg SOURCE_REVISION=$(git rev-parse HEAD) --format docker -t immich-proxy-test .. && podman run -it -p=3000:3000 --env-file .env --restart=always immich-proxy-test",
     "start": "node dist/index.js"
   },
   "author": "Alan Grainger",

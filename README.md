@@ -1,5 +1,14 @@
 # Immich Public Proxy
 
+This is [saltyminty's custom fork](https://github.com/saltyminty/immich-public-proxy),
+based on upstream `v4.1.1`. It adds a multi-select tag filter that matches all selected
+tags, filtered photo navigation and downloads, and cached tags with background refresh.
+See [Sharing from Immich](docs/how-to-use.md) for the custom features and
+[CONTRIBUTING.md](CONTRIBUTING.md#custom-tag-filter-build) for building this fork.
+The images, badges and hosted documentation below belong to the upstream project;
+this fork does not automatically publish container images. Its deployed About page
+links to the exact public source commit used to build it.
+
 <p align="center" width="100%">
 <img src="docs/public/ipp.svg" width="180" height="180">
 </p>

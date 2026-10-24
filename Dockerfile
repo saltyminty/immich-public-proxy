@@ -21,11 +21,6 @@ COPY --chown=node:node shared/ shared/
 COPY --chown=node:node app/ app/
 RUN npm run build --workspace=shared --workspace=app
 
-# The modified network service offers its corresponding source under AGPL-3.0.
-# The build context excludes credentials, Git internals and generated output.
-COPY --chown=node:node . /ipp/source/
-RUN tar -czf /ipp/app/public/custom-source.tar.gz -C /ipp/source .
-
 # Production tree with @ipp/core dereferenced from its workspace symlink into a
 # real folder (cp -L), so the runner's /app is self-contained. The apps'
 # workspace links go first: the runner has IPP at /app, and the upload app
@@ -57,8 +52,13 @@ COPY --from=builder --chown=root:root /ipp/app/config.json ./
 USER node
 
 ARG PACKAGE_VERSION
+ARG SOURCE_REVISION
 ENV APP_VERSION=${PACKAGE_VERSION}
+ENV SOURCE_REVISION=${SOURCE_REVISION}
 ENV NODE_ENV=production
+RUN node -e "require('./dist/version')"
+LABEL org.opencontainers.image.source="https://github.com/saltyminty/immich-public-proxy" \
+      org.opencontainers.image.revision=${SOURCE_REVISION}
 
 # tini as PID 1 reaps orphaned healthcheck processes, which node does not (GitHub #66).
 # -s keeps reaping, without a warning, when PID 1 is already an init (compose `init: true`).

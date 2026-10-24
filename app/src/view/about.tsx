@@ -1,5 +1,5 @@
 import { ThemeScript } from '@ipp/core'
-import { APP_VERSION, ASSET_VERSION } from '../version'
+import { APP_VERSION, ASSET_VERSION, SOURCE_OFFER } from '../version'
 
 export function About () {
   return (
@@ -23,7 +23,9 @@ export function About () {
             <a href="https://github.com/alangrainger/immich-public-proxy/blob/v4.1.1/LICENSE" rel="noopener noreferrer">GNU Affero General Public License v3</a>.
           </p>
           <p class="about-source">
-            <a href={`/share/static/${ASSET_VERSION}/custom-source.tar.gz`} download>Download this build’s source code</a>
+            <a href={SOURCE_OFFER.url} rel="noopener noreferrer">
+              {SOURCE_OFFER.exactRevision ? 'View this build’s source on GitHub' : 'View source on GitHub'}
+            </a>
           </p>
         </main>
       </body>
