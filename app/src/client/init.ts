@@ -13,6 +13,7 @@ import { setupToolbar } from './selection.js'
 import { initLightbox, openLightbox } from './lightbox.js'
 import { computeLayoutAndRender, onScroll } from './virtualisation.js'
 import { setupTagFilter } from './tag-filter.js'
+import { parseTagNames } from './tag-url.js'
 
 function readInitParams (): InitParams {
   const el = document.getElementById('ipp-init')
@@ -45,7 +46,8 @@ function init () {
   const params = readInitParams()
   revealUploadLink()
   state.allItems = params.items || []
-  state.items = state.allItems
+  const initialTagNames = parseTagNames(window.location.search)
+  state.items = initialTagNames.length ? [] : state.allItems
   state.lightboxConfig = params.lightboxConfig || {}
   if (params.metadataConfig) state.metadataConfig = params.metadataConfig
   state.groupByDate = params.groupByDate || false
@@ -55,8 +57,20 @@ function init () {
 
   setupToolbar()
   initLightbox()
+  function openInitialItem () {
+    const hash = window.location.hash.slice(1)
+    if (hash) {
+      const idx = state.items.findIndex(it => it.id === hash)
+      if (idx >= 0) openLightbox(idx)
+    } else if (params.openItem && params.openItem > 0 && params.openItem <= state.items.length) {
+      openLightbox(params.openItem - 1)
+    }
+  }
+
+  if (document.getElementById('tag-filter')) {
+    setupTagFilter(params.tagsUrl, initialTagNames, initialTagNames.length ? openInitialItem : undefined)
+  }
   computeLayoutAndRender()
-  if (params.tagsUrl) setupTagFilter(params.tagsUrl)
 
   let resizeFrame: number | undefined
   const resizeObserver = new ResizeObserver(() => {
@@ -67,14 +81,7 @@ function init () {
 
   window.addEventListener('scroll', onScroll, { passive: true })
 
-  // Deep-link: prefer #asset-id in the URL hash, fall back to ?openItem
-  const hash = window.location.hash.slice(1)
-  if (hash) {
-    const idx = state.items.findIndex(it => it.id === hash)
-    if (idx >= 0) openLightbox(idx)
-  } else if (params.openItem && params.openItem > 0 && params.openItem <= state.items.length) {
-    openLightbox(params.openItem - 1)
-  }
+  if (!initialTagNames.length) openInitialItem()
 }
 
 init()

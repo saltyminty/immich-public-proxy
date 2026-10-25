@@ -149,6 +149,13 @@ polls every two seconds only while refreshing, for at most two minutes. It retai
 selected tag IDs, keeps disappeared selected tags unavailable rather than
 broadening the filter, and defers index changes until an open photo viewer closes.
 
+Selected tags are shared as repeated `tags` query parameters containing exact
+tag names. Dropdown changes replace the current URL while preserving other
+parameters and the photo hash. A URL with selected tags starts with an empty
+gallery until the manifest resolves them; unknown or ambiguous names remain
+unavailable selections with no matches. Initial photo deep links open only after
+filtering and only if the photo matches. Clearing the filter restores the album.
+
 Build with a distinct version whenever changing browser code, because static
 assets are cached under the version segment. Build only from a clean checkout of
 a commit already pushed to the public `saltyminty/immich-public-proxy` fork. Commit
@@ -161,9 +168,9 @@ npm run build
 npm run lint
 npm test
 test -z "$(git status --porcelain)" &&
-docker build --build-arg PACKAGE_VERSION=4.1.1-tags.4 \
+docker build --build-arg PACKAGE_VERSION=4.1.1-tags.5 \
   --build-arg SOURCE_REVISION="$(git rev-parse HEAD)" \
-  -t immich-public-proxy:4.1.1-tags.4 .
+  -t immich-public-proxy:4.1.1-tags.5 .
 ```
 
 The gallery footer's **About** link leads to `/share/about`, which offers the

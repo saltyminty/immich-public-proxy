@@ -3,13 +3,13 @@ import { KeyType, loadConfig, type SharedLink } from '@ipp/core'
 import type { Response } from 'express-serve-static-core'
 import { gallery } from '../src/gallery/builder'
 
-async function render (showMetadata?: boolean, allowDownload = true) {
+async function render (showMetadata?: boolean, allowDownload = true, tags?: string | string[]) {
   const share: SharedLink = {
     key: 'test-key', keyType: KeyType.key, type: 'ALBUM', assets: [], expiresAt: null, showMetadata, allowDownload
   }
   let html = ''
   await gallery({
-    req: { protocol: 'https', headers: { host: 'example.com' } },
+    req: { protocol: 'https', headers: { host: 'example.com' }, query: { tags } },
     header: () => {},
     send: (body: string) => { html = body }
   } as unknown as Response, share)
@@ -44,5 +44,19 @@ describe('tag filter gallery controls', () => {
     expect(allowed.html.match(/<button id="download-matching"[^>]*>/)?.[0]).toContain('hidden')
     const denied = await render(true, false)
     expect(denied.html).not.toContain('id="download-matching"')
+  })
+
+  it('waits for URL-selected tags before offering a whole-album download', async () => {
+    const { html } = await render(true, true, ['Alice', 'Bob'])
+    expect(html.match(/<a id="download-all"[^>]*>/)?.[0]).toContain('hidden')
+    expect(html).toContain('Loading selected tags…')
+  })
+
+  it.each([false, undefined])('offers a clearable filter shell without exposing tags when metadata permission is %s', async showMetadata => {
+    const { html, init } = await render(showMetadata, true, 'Alice')
+    expect(init).not.toHaveProperty('tagsUrl')
+    expect(html).toContain('id="tag-filter"')
+    expect(html).toContain('Tags are unavailable for this shared link.')
+    expect(html.match(/<a id="download-all"[^>]*>/)?.[0]).toContain('hidden')
   })
 })

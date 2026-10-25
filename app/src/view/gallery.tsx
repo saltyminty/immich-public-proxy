@@ -22,6 +22,7 @@ export interface GalleryProps {
   groupByDate: GroupByDateMode | false
   metaBase?: string
   tagsUrl?: string
+  tagFilterRequested?: boolean
   // The upload service's page for this share, when it accepts uploads
   uploadLink?: string
   // Set when the upload service is assumed rather than configured: the button
@@ -101,7 +102,7 @@ export function Gallery (props: GalleryProps) {
               )}
               {props.showDownloadZip && (
                 <>
-                  <a id="download-all" class="header-action" href={props.path + '/download'} title="Download all" aria-label="Download all">
+                  <a id="download-all" class="header-action" href={props.path + '/download'} title="Download all" aria-label="Download all" hidden={props.tagFilterRequested}>
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                       <path fill="currentColor" d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z"/>
                     </svg>
@@ -115,7 +116,7 @@ export function Gallery (props: GalleryProps) {
         {props.description && (
           <p id="album-description">{props.description}</p>
         )}
-        {props.tagsUrl && (
+        {(props.tagsUrl || props.tagFilterRequested) && (
           <div id="tag-filter" class="tag-filter">
             <div class="tag-filter-picker">
               <button id="tag-filter-toggle" class="tag-filter-button" type="button" disabled
@@ -127,7 +128,9 @@ export function Gallery (props: GalleryProps) {
               </div>
             </div>
             <button id="tag-filter-clear" class="tag-filter-button" type="button" disabled>Clear filters</button>
-            <span id="tag-filter-status" role="status" aria-live="polite">Loading tags… You can browse all items.</span>
+            <span id="tag-filter-status" role="status" aria-live="polite">{props.tagFilterRequested
+              ? props.tagsUrl ? 'Loading selected tags…' : 'Tags are unavailable for this shared link.'
+              : 'Loading tags… You can browse all items.'}</span>
             <button id="tag-filter-retry" class="tag-filter-button" type="button" hidden>Retry</button>
           </div>
         )}

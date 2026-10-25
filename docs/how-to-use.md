@@ -12,11 +12,27 @@ updates preserve your selections and wait until the photo viewer closes. A
 selected tag that disappears remains marked **no longer available** and matches
 no photos until you remove that selection.
 
+To share a filtered view, select the tags and copy the address from your browser.
+The URL updates automatically, for example
+`https://photos.example.com/share/<key>?tags=Alice&tags=Bob`.
+Opening that link selects both tags and shows only photos with **all** of them.
+Reloading keeps the selection; **Clear filters** removes the tag parameters.
+Tag names match exactly, including their full hierarchical names. The browser
+encodes spaces and punctuation for you. Repeated `tags` parameters keep a comma
+inside a tag name distinct from a list of tags; a manually entered
+`?tags=Alice,Bob` also selects both names.
+
+A filtered link waits for its selected tags before showing photos. If a tag
+cannot be found, has an ambiguous name, or tags cannot be loaded, it does not
+silently show the whole album. Retry loading or clear the filters to continue.
+Filters select a view of the existing shared album; visitors can clear them.
+
 Opening or reloading an album checks its membership and loads tags for new
 photos. Once saved tags are five minutes old, a visit starts a background check
 for tag edits. This does not watch Immich continuously. If a refresh fails, saved
 tags remain usable and Retry becomes available. First visits and proxy restarts
-still need an initial load. The gallery remains available if tags cannot load.
+still need an initial load. An unfiltered gallery remains available if tags
+cannot load.
 
 The dropdown uses explicit Immich tags, including their full hierarchical names.
 Face-recognition People labels are separate and are not included.

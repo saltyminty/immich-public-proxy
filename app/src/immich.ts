@@ -137,9 +137,9 @@ export async function handleShareRequest (req: IncomingShareRequest, res: Respon
     // videos default to a gallery unless `singleVideo` is explicitly disabled.
     const directImage = asset.type === AssetType.image && !getConfigOption('ipp.gallery.singleImage')
     const directVideo = asset.type === AssetType.video && !getConfigOption('ipp.gallery.singleVideo', true)
-    if ((directImage || directVideo) && !req.password) {
+    if ((directImage || directVideo) && !req.password && req.req.query?.tags === undefined) {
       // Output the asset directly rather than a gallery page, unless it's a
-      // password-protected link
+      // password-protected link or a tag-filtered URL
       await assetBuffer(req, res, link.assets[0], ImageSize.preview, link, directVideo)
     } else {
       // Show a gallery page

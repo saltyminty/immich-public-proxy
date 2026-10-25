@@ -152,6 +152,7 @@ export async function gallery (res: Response, share: SharedLink, openItem?: numb
     groupByDate,
     metaBase,
     tagsUrl: share.showMetadata === true ? '/share/tags/' + share.key : undefined,
+    tagFilterRequested: res.req.query?.tags !== undefined,
     uploadLink: uploadLink(share),
     uploadHealthcheck: uploadHealthcheck()
   }

@@ -1,4 +1,5 @@
 import { state } from './state.js'
+import { parseTagNames, resolveTagNames, resolveUnavailableTagNames, selectedTagNames, withTagNames } from './tag-url.js'
 import { downloadAssets, exitSelectMode } from './selection.js'
 import { resetGalleryLayout } from './virtualisation.js'
 import { indexTagManifest, matchAllTags, reconcileTagOptions, sameGalleryItems, type TagIndex, type TagOption } from './tag-index.js'
@@ -6,7 +7,7 @@ import { indexTagManifest, matchAllTags, reconcileTagOptions, sameGalleryItems, 
 const POLL_INTERVAL_MS = 2000
 const POLL_WINDOW_MS = 120000
 
-export function setupTagFilter (url: string) {
+export function setupTagFilter (url: string | undefined, initialNames: string[], onInitialReady?: () => void) {
   const root = document.getElementById('tag-filter')
   const toggle = document.getElementById('tag-filter-toggle') as HTMLButtonElement
   const panel = document.getElementById('tag-filter-panel')
@@ -19,9 +20,13 @@ export function setupTagFilter (url: string) {
   const downloadMatching = document.getElementById('download-matching') as HTMLButtonElement | null
   if (!root || !toggle || !panel || !options || !clear || !status || !retry || !empty) return
 
-  const selected = new Set<string>()
+  const initialSelection = resolveTagNames(initialNames, [])
+  const selected = initialSelection.selected
   const optionElements = new Map<string, { label: HTMLLabelElement, checkbox: HTMLInputElement, name: HTMLSpanElement }>()
-  let tagOptions: TagOption[] = []
+  let tagOptions: TagOption[] = initialSelection.unavailable
+  let requestedNames: string[] | undefined = initialNames
+  let displayedUrlNames = initialNames
+  let initialCompleted = false
   let index: TagIndex | undefined
   let pendingIndex: TagIndex | undefined
   let loading = false
@@ -43,9 +48,22 @@ export function setupTagFilter (url: string) {
     status!.textContent = [count, notice].filter(Boolean).join(' · ')
   }
 
+  function syncUrl () {
+    const names = selectedTagNames(selected, tagOptions)
+    const next = withTagNames(window.location.href, names)
+    if (next !== window.location.href) history.replaceState(history.state, '', next)
+    displayedUrlNames = names
+  }
+
+  function resolveSelection (names: string[]) {
+    const resolved = resolveTagNames(names, index?.tags || [])
+    selected.clear()
+    resolved.selected.forEach(id => selected.add(id))
+    tagOptions = resolved.unavailable
+  }
+
   function updateResults (userChange = false) {
-    if (!index) return
-    const matching = matchAllTags(state.allItems, selected, index)
+    const matching = index ? matchAllTags(state.allItems, selected, index) : selected.size ? [] : state.allItems
     const changed = !sameGalleryItems(matching, state.items)
     if (changed || userChange) exitSelectMode()
     if (changed) state.items = matching
@@ -53,11 +71,11 @@ export function setupTagFilter (url: string) {
     clear.disabled = !active
     toggle.textContent = active ? 'Filter by tags (' + selected.size + ')' : 'Filter by tags'
     showStatus()
-    empty!.hidden = state.items.length > 0 || !active
+    empty!.hidden = !index || state.items.length > 0 || !active
     if (downloadAll && downloadMatching) {
       downloadAll.hidden = active
       downloadMatching.hidden = !active
-      downloadMatching.disabled = state.items.length === 0
+      downloadMatching.disabled = !index || state.items.length === 0
       downloadMatching.textContent = 'Download matching (' + state.items.length + ')'
     }
     if (changed) resetGalleryLayout()
@@ -87,8 +105,10 @@ export function setupTagFilter (url: string) {
           if (!index) return
           if (checkbox.checked) selected.add(tag.id)
           else selected.delete(tag.id)
+          initialCompleted = true
           renderOptions()
           updateResults(true)
+          syncUrl()
         })
         label.append(checkbox, name)
         entry = { label, checkbox, name }
@@ -105,8 +125,31 @@ export function setupTagFilter (url: string) {
 
   function applyIndex (next: TagIndex) {
     index = next
+    if (requestedNames !== undefined) {
+      resolveSelection(requestedNames)
+      requestedNames = undefined
+    } else {
+      const resolved = resolveUnavailableTagNames(selected, tagOptions, index.tags)
+      selected.clear()
+      resolved.forEach(id => selected.add(id))
+    }
     renderOptions()
     updateResults()
+    syncUrl()
+    if (!initialCompleted) {
+      initialCompleted = true
+      onInitialReady?.()
+    }
+  }
+
+  function applyRequestedNames () {
+    if (requestedNames === undefined) return
+    if (index) applyIndex(index)
+    else {
+      resolveSelection(requestedNames)
+      updateResults()
+      syncUrl()
+    }
   }
 
   state.lightbox?.on('destroy', () => {
@@ -116,8 +159,17 @@ export function setupTagFilter (url: string) {
         const next = pendingIndex
         pendingIndex = undefined
         applyIndex(next)
-      }
+      } else applyRequestedNames()
     })
+  })
+
+  window.addEventListener('popstate', () => {
+    const names = parseTagNames(window.location.search)
+    if (names.length === displayedUrlNames.length && names.every(name => displayedUrlNames.includes(name))) return
+    requestedNames = names
+    displayedUrlNames = names
+    initialCompleted = true
+    if (!state.lightbox?.pswp && !state.lightbox?.shouldOpen) applyRequestedNames()
   })
 
   function stopPolling () {
@@ -134,9 +186,9 @@ export function setupTagFilter (url: string) {
     for (const entry of optionElements.values()) entry.label.remove()
     optionElements.clear()
     toggle.disabled = true
-    clear.disabled = true
+    clear.disabled = selected.size === 0
     if (downloadMatching) downloadMatching.disabled = true
-    notice = 'Tags are unavailable. Retry or reload this page.'
+    notice = selected.size ? 'Selected tags are unavailable. Retry or clear filters.' : 'Tags are unavailable. Retry or reload this page.'
     retry.hidden = false
     showStatus()
   }
@@ -157,12 +209,12 @@ export function setupTagFilter (url: string) {
   }
 
   async function loadTags () {
-    if (loading) return
+    if (loading || !url) return
     loading = true
     retry.disabled = true
     retry.hidden = true
     if (!index) toggle.disabled = true
-    notice = index ? 'Updating tags…' : 'Loading tags… You can keep browsing.'
+    notice = index ? 'Updating tags…' : selected.size ? 'Loading selected tags…' : 'Loading tags… You can keep browsing.'
     showStatus()
     try {
       const timeout = pollDeadline ? Math.max(1, pollDeadline - Date.now()) : 110000
@@ -197,7 +249,7 @@ export function setupTagFilter (url: string) {
       stopPolling()
       notice = index || pendingIndex
         ? 'Showing saved tags. Try again later.'
-        : 'Tags could not be loaded. Retry or reload this page.'
+        : selected.size ? 'Selected tags could not be loaded. Retry or clear filters.' : 'Tags could not be loaded. Retry or reload this page.'
       retry.hidden = false
       showStatus()
     } finally {
@@ -221,10 +273,16 @@ export function setupTagFilter (url: string) {
     if (event.relatedTarget && !root.contains(event.relatedTarget as Node)) setOpen(false)
   })
   clear.addEventListener('click', () => {
-    if (!index) return
+    initialCompleted = true
+    requestedNames = index ? undefined : []
     selected.clear()
     renderOptions()
     updateResults(true)
+    syncUrl()
+    if (!index) {
+      notice = !url ? 'Tags are unavailable for this shared link.' : loading ? 'Loading tags… You can keep browsing.' : 'Tags are unavailable. Retry or reload this page.'
+      showStatus()
+    }
   })
   downloadMatching?.addEventListener('click', () => {
     if (index && selected.size) downloadAssets(state.items.map(item => item.id))
@@ -233,5 +291,11 @@ export function setupTagFilter (url: string) {
     stopPolling()
     loadTags()
   })
-  loadTags()
+  updateResults()
+  if (url) loadTags()
+  else {
+    notice = selected.size ? 'Tags are unavailable for this shared link. Clear filters to view all items.' : 'Tags are unavailable for this shared link.'
+    retry.hidden = true
+    showStatus()
+  }
 }
